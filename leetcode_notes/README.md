@@ -282,3 +282,229 @@ public:
     }
 };
 ```
+
+## 2022-5-1
+
+### 1305.两颗二叉搜索树的所有元素
+
+学习到了STL中`merge()`函数和`inplace_merge()`函数的用法
+
+```cpp
+class Solution {
+    vector<int> vec;
+    void mid(TreeNode* root)
+    {
+        if (root == nullptr) return;
+        mid(root->left);
+        vec.push_back(root->val);
+        mid(root->right);
+    }
+public:
+    vector<int> getAllElements(TreeNode* root1, TreeNode* root2) {
+        mid(root1);
+        int n = vec.size();
+        mid(root2);
+        inplace_merge(vec.begin(), vec.begin() + n, vec.end());
+        return vec;
+    }
+};
+```
+
+### 2256.最小平均差
+
+前缀和+遍历模拟
+
+```cpp
+class Solution {
+public:
+    int minimumAverageDifference(vector<int>& nums) {
+        int res = 0, mindis = INT_MAX;
+        int n = nums.size();
+        vector<long long> presum(n);
+        presum[0] = nums[0];
+        for (int i = 1; i < n; i++)
+        {
+            presum[i] = presum[i-1] + nums[i];
+        }
+        for (int i = 0; i < n; i++)
+        {
+            long long  a = presum[i] / (i + 1);
+            long long b = i < n - 1 ? (presum.back() - presum[i]) / (n - i - 1) : 0;
+            long long ab = abs(a - b);
+            if (mindis > ab)
+            {
+                mindis = ab;
+                res = i;
+            }
+        }
+        return res;
+    }
+};
+```
+
+### 2257.统计网络图中没有被保卫的格子
+
+基本思路是DFS，关键是处理好守卫和墙，以降低复杂度
+
+```cpp
+class Solution {
+public:
+    int countUnguarded(int m, int n, vector<vector<int>>& guards, vector<vector<int>>& walls) {
+        vector<vector<int>> grid(m, vector<int>(n, 1));
+        for (auto v : walls)
+        {
+            grid[v[0]][v[1]] = 0;
+        }
+        for (auto v : guards)
+        {
+            grid[v[0]][v[1]] = 0;
+        }
+        int dx[4] = {1, -1, 0, 0};
+        int dy[4] = {0, 0, 1, -1};
+        
+        for (auto v : guards)
+        {
+            int x = v[0], y = v[1];
+            for (int i = 0; i < 4; i++)
+            {
+                int tx = x + dx[i], ty = y + dy[i];
+                while (tx >= 0 && tx < m && 
+                       ty >= 0 && ty < n && grid[tx][ty] != 0)
+                {
+                    grid[tx][ty] = -1;
+                    tx += dx[i];
+                    ty += dy[i];
+                }
+            }
+        }
+        int res = 0;
+        for (auto v : grid)
+        {
+            for (int n : v)
+                if (n == 1) res++;
+        }
+        return res;
+    }
+};
+```
+
+## 2022-5-2
+
+### [牛客.分发糖果](https://ac.nowcoder.com/acm/problem/235159)
+
+数学方法，列举几种情况进行判断
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+int main()
+{
+    int N;
+    cin >> N;
+    for (int i = 0; i < N; i++)
+    {
+        int cnt;
+        cin >> cnt;
+        int num2 = 0, num3 = 0;
+        for (int j = 0; j < cnt; j++)
+        {
+            int tmp;
+            cin >> tmp;
+            if (tmp == 2) num2++;
+            else num3++;
+        }
+        int a = num3 % 3;
+        int b = num2 % 3;
+        if (a == 0)
+        {
+            if (b == 0) cout << "YES" << endl;
+            else cout << "NO" <<  endl;
+        }
+        else if (a == 1)
+        {
+            if (num3 > 3 && num2 >= 3 && b == 0) cout << "YES" << endl;
+            else cout << "NO" << endl;
+        }
+        else
+        {
+            if (num2 >= 6 && b == 0) cout << "YES" <<  endl;
+            else cout << "NO" << endl;
+        }
+    }
+    return 0;
+}
+```
+
+### [牛客.海滩网络](https://ac.nowcoder.com/acm/problem/236226)
+
+最小生成树模板题，需要对可能的节点进行筛选优化
+
+```cpp
+#include <bits/stdc++.h>
+using namespace std;
+
+const int N = 1e5 + 10;
+#define x first
+#define y second
+using ll = long long;
+using P = pair<int, int>;
+
+P a[N];
+int p[N];
+int n, m  = 0;
+
+struct Edge{
+    int a, b;
+    ll w;
+    bool operator < (const Edge & E) const
+    {
+        return w < E.w;
+    }
+} e[N * 25];
+
+ll get_weight(int x1, int y1, int x2, int y2)
+{
+    ll dx = abs(x1 - x2), dy = abs(y1 - y2);
+    return dx * dx + dy * dy;
+}
+
+int find(int x)
+{
+    if (p[x] == x) return p[x];
+    return p[x] = find(p[x]);
+}
+
+void kruskal() 
+{
+    for (int i = 1; i <= n; i++) p[i] = i;
+    sort(e + 1, e + 1 + m);
+    ll ans = 0;
+    for (int i = 1; i <= m; i++)
+    {
+        int x = find(e[i].a), y = find(e[i].b);
+        if (x != y)
+        {
+            p[x] = y;
+            ans += e[i].w;
+        }
+    }
+    cout << ans <<  endl;
+}
+int main(){
+    cin >> n;
+    for (int i = 1; i <= n; i++) cin >> a[i].x >> a[i].y;
+    sort(a + 1, a + 1 + n);
+    for (int i = 1; i <= n; i++)
+    {
+        for (int j = i + 1; j <= i + 20 && j <= n; j++)
+        {
+            e[++m] = {i, j, get_weight(a[i].x, a[i].y, a[j].x, a[j].y)};
+        }
+    }
+    kruskal();
+    return 0;
+}
+
+```
+
