@@ -508,3 +508,147 @@ int main(){
 
 ```
 
+## 2022-5-3
+
+### [937.重新排列日志文件](https://leetcode-cn.com/problems/reorder-data-in-log-files/)
+
+自定义排序，没什么好说的，用到了`stable_sort()`函数，进行稳定排序，比较`sort()`是不稳定的
+
+```cpp
+class Solution {
+public:
+    vector<string> reorderLogFiles(vector<string>& logs) {
+        auto cmp = [](const string & a, const string & b){
+            int pa = a.find(' '), pb = b.find(' ');
+            if (isdigit(a[pa + 1])) return false;
+            else if (isdigit(b[pb + 1])) return true;
+            else
+            {
+                string loga = a.substr(pa + 1), logb = b.substr(pb + 1);
+                if (loga == logb) return a.substr(0, pa) < b.substr(0, pb);
+                else return loga < logb;
+            }
+        };
+        stable_sort(logs.begin(), logs.end(), cmp);
+        return logs;
+    }
+};
+```
+
+## 2022-5-4
+
+### [1823.找出游戏的获胜者](https://leetcode-cn.com/problems/find-the-winner-of-the-circular-game/)
+
+约瑟夫环模板题，之前做过还是不记得hhh，太草了
+约瑟夫环的思路就是倒叙看待问题，先确定获胜者位置为0，然后倒着把每一步失败的人加进数组，同时再计算获胜者此时在数组中的位置，为什么用数组是为了**取模方面**，计算完后需要把数组下标转换为人的序号，迭代法更能体现这种思路
+
+```cpp
+// 递归
+class Solution {
+public:
+    int findTheWinner(int n, int k) {
+        if (n == 1) return 1;
+        // 减1切换为数组下标进行求模运算，加1切换回人的编号
+        return (findTheWinner(n - 1, k) + k - 1) % n + 1; 
+    }
+};
+```
+
+```cpp
+// 迭代
+class Solution {
+public:
+    int findTheWinner(int n, int k) {
+        int p = 0;
+        for (int i = 2; i <= n; i++)
+            p = (p + k) % i;
+        return p + 1;
+    }
+};
+```
+
+数组模拟做法
+
+```cpp
+class Solution {
+public:
+    int findTheWinner(int n, int k) {
+        vector<int> lose(n, 0);
+        int idx = 0, sz = n;
+        while (n > 1)
+        {
+            for (int i = 0; i < k - 1; i++) // 移动k-1次
+            {
+                do idx++;
+                while (lose[idx % sz]);
+            }
+            n--;
+            lose[idx % sz] = 1;
+            while (lose[idx % sz]) idx++;
+        }
+        return idx % sz + 1;
+    }
+};
+```
+
+队列模拟做法
+
+```cpp
+class Solution {
+public:
+    int findTheWinner(int n, int k) {
+        queue<int> qu;
+        for (int i = 1; i <= n; i++) {
+            qu.emplace(i);
+        }
+        while (qu.size() > 1) {
+            for (int i = 1; i < k; i++) {
+                qu.emplace(qu.front());
+                qu.pop();
+            }
+            qu.pop();
+        }
+        return qu.front();
+    }
+};
+```
+
+### [390.消除游戏](https://leetcode-cn.com/problems/elimination-game/)
+
+运用约瑟夫环的思想，先固定最后剩下的数字的位置，然后找数学规律
+
+数学规律的证明还是有点费劲的，[看这里](https://blog.csdn.net/afei__/article/details/83689502)
+
+```cpp
+class Solution {
+public:
+    int lastRemaining(int n) {
+        // 这数据量，一看就不能暴力
+        return n == 1 ? 1 : 2 * (n / 2 + 1 - lastRemaining(n / 2));
+    }
+};
+```
+
+也可以用等差数列的思路模拟，实质上也是先假设剩下的数字的位置，再倒推其原始位置
+
+```cpp
+class Solution {
+public:
+    int lastRemaining(int n) {
+        int a1 = 1;
+        int k = 0, cnt = n, step = 1;
+        while (cnt > 1) {
+            if (k % 2 == 0) { // 正向
+                a1 = a1 + step;
+            } else { // 反向
+                a1 = (cnt % 2 == 0) ? a1 : a1 + step;
+            }
+            k++;
+            cnt = cnt >> 1;
+            step = step << 1;
+        }
+        return a1;
+    }
+};
+```
+
